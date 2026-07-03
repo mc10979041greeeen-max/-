@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>アイデアメモ — クロッキー帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1c1b19;
+    --surface:#252320;
+    --surface-raised:#2e2b26;
+    --ink:#ede8dc;
+    --ink-dim:#a39c8c;
+    --ink-faint:#6f695c;
+    --rule:#3c3830;
+    --blue:#5fa8d3;
+    --blue-dim:#3d6d87;
+    --red:#d65745;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(237,232,220,0.05) 1px, transparent 0) 0 0/22px 22px,
+      var(--bg);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:96px;
+  }
+  ::selection{background:var(--blue-dim);color:var(--ink);}
+  button{font-family:inherit;}
+  button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--blue);
+    outline-offset:2px;
+  }
+
+  header{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 18px 14px;
+    background:linear-gradient(var(--bg) 80%, transparent);
+    border-bottom:1px solid var(--rule);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{
+    font-size:22px; color:var(--blue);
+    transform:rotate(-12deg); display:inline-block;
+  }
+  header h1{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:900; font-size:19px; margin:0; letter-spacing:.02em;
+  }
+  header .sub{
+    margin:1px 0 0; font-size:11px; color:var(--ink-dim); letter-spacing:.03em;
+  }
+  #searchToggle{
+    background:none; border:1px solid var(--rule); color:var(--ink-dim);
+    width:38px; height:38px; border-radius:10px; font-size:15px; cursor:pointer;
+  }
+  #searchToggle:active{background:var(--surface);}
+  .header-actions{display:flex; gap:8px; flex-shrink:0;}
+  #backupToggle{
+    background:none; border:1px solid var(--blue-dim); color:var(--blue);
+    width:38px; height:38px; border-radius:10px; font-size:15px; cursor:pointer;
+  }
+  #backupToggle:active{background:var(--surface);}
+
+  .search-bar{padding:0 18px; margin-top:10px; max-height:60px; overflow:hidden; transition:max-height .2s ease, margin .2s ease;}
+  .search-bar.hidden{max-height:0; margin-top:0;}
+  .search-bar input{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--rule);
+    background:var(--surface); color:var(--ink); font-size:14px;
+  }
+
+  .filter-row{
+    display:flex; gap:8px; overflow-x:auto; padding:14px 18px 4px;
+    scrollbar-width:none;
+  }
+  .filter-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; padding:6px 12px; border-radius:999px; font-size:12px;
+    border:1px solid var(--rule); color:var(--ink-dim); background:transparent;
+    cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{border-color:var(--blue); color:var(--blue); background:rgba(95,168,211,0.1);}
+
+  main{padding:8px 18px 12px; display:flex; flex-direction:column; gap:12px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-left:3px solid var(--blue);
+    border-radius:var(--radius);
+    padding:14px 14px 10px;
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .frame-no{
+    font-family:'Space Grotesk', monospace; font-size:11px; color:var(--ink-faint);
+    letter-spacing:.05em;
+  }
+  .priority{color:var(--red); font-size:12px; letter-spacing:1px;}
+  .card h3{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700;
+    font-size:16px; margin:0 0 4px; line-height:1.4;
+  }
+  .composition{
+    margin:0 0 8px; font-size:13px; color:var(--ink-dim); line-height:1.5;
+  }
+  .badges{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+  .badge{
+    font-size:11px; padding:3px 8px; border-radius:6px;
+    background:var(--surface-raised); color:var(--blue); border:1px solid var(--blue-dim);
+  }
+  .tags{font-size:12px; color:var(--blue); margin-bottom:6px; letter-spacing:.02em;}
+  .memo{
+    font-size:12.5px; color:var(--ink-dim); margin:0 0 8px; line-height:1.5;
+    white-space:pre-wrap;
+  }
+  .card-thumb{
+    width:100%; max-height:220px; object-fit:cover; border-radius:10px;
+    margin-bottom:8px; display:block; border:1px solid var(--rule); cursor:zoom-in;
+  }
+
+  .image-field{
+    margin-top:6px;
+  }
+  .image-upload-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 14px; border-radius:10px; border:1px dashed var(--rule);
+    background:var(--surface); color:var(--ink-dim); font-size:13px; cursor:pointer;
+  }
+  .image-upload-btn:active{background:var(--surface-raised);}
+  .image-preview-wrap{
+    position:relative; margin-top:10px; width:140px;
+  }
+  .image-preview-wrap img{
+    width:140px; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--rule);
+    display:block;
+  }
+  .image-remove{
+    position:absolute; top:-8px; right:-8px;
+    width:26px; height:26px; border-radius:50%;
+    background:var(--red); color:#161514; border:none; font-size:14px; line-height:1;
+    cursor:pointer;
+  }
+
+  .lightbox{
+    position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.85);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .lightbox.hidden{display:none;}
+  .lightbox img{
+    max-width:100%; max-height:100%; border-radius:8px;
+  }
+  .lightbox-close{
+    position:absolute; top:18px; right:18px;
+    width:38px; height:38px; border-radius:50%;
+    background:var(--surface-raised); color:var(--ink); border:1px solid var(--rule);
+    font-size:16px; cursor:pointer;
+  }
+  .card-actions{
+    display:flex; gap:6px; border-top:1px solid var(--rule); padding-top:8px; margin-top:2px;
+  }
+  .card-actions button{
+    flex:1; background:none; border:none; color:var(--ink-dim);
+    font-size:12px; padding:7px 0; border-radius:8px; cursor:pointer;
+  }
+  .card-actions button:active{background:var(--surface-raised);}
+  .card-actions .copy{color:var(--blue);}
+  .card-actions .delete{color:var(--red);}
+
+  .empty-state{
+    text-align:center; padding:60px 30px; color:var(--ink-faint); font-size:13.5px; line-height:1.8;
+  }
+  .empty-state .big{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-size:15px; color:var(--ink-dim); display:block; margin-bottom:6px;
+  }
+
+  .fab{
+    position:fixed; right:20px; bottom:26px; z-index:20;
+    width:58px; height:58px; border-radius:50%;
+    background:var(--blue); color:#161514; border:none;
+    font-size:28px; line-height:1; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  }
+  .fab:active{transform:scale(0.95);}
+
+  .backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:30;
+    opacity:1; transition:opacity .2s ease;
+  }
+  .backdrop.hidden{opacity:0; pointer-events:none;}
+
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:31;
+    background:var(--surface-raised);
+    border-top:1px solid var(--rule);
+    border-radius:20px 20px 0 0;
+    padding:10px 20px 22px;
+    max-height:88vh; overflow-y:auto;
+    transform:translateY(0);
+    transition:transform .25s ease;
+  }
+  .sheet.hidden{transform:translateY(110%);}
+  .sheet-handle{
+    width:36px; height:4px; background:var(--rule); border-radius:2px; margin:6px auto 14px;
+  }
+  .sheet h2{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-size:17px; margin:0 0 14px;
+  }
+  #ideaForm label{
+    display:block; font-size:12px; color:var(--ink-dim); margin-bottom:14px;
+  }
+  .req{color:var(--red); font-size:10px; margin-left:4px;}
+  #ideaForm input, #ideaForm textarea{
+    width:100%; margin-top:6px; padding:11px 12px; border-radius:10px;
+    border:1px solid var(--rule); background:var(--surface); color:var(--ink);
+    font-size:14px; font-family:inherit; resize:vertical;
+  }
+  .stars{
+    margin-top:8px; font-size:26px; letter-spacing:6px; color:var(--rule); cursor:pointer;
+  }
+  .stars span.on{color:var(--red);}
+  .sheet-actions{display:flex; gap:10px; margin-top:6px;}
+  .sheet-actions button{
+    flex:1; padding:13px 0; border-radius:10px; font-size:14px; border:none; cursor:pointer;
+  }
+  #cancelBtn, #backupCloseBtn, #exportFileBtn{background:transparent; border:1px solid var(--rule); color:var(--ink-dim);}
+  #saveBtn, #exportCopyBtn, #importBtn{background:var(--blue); color:#161514; font-weight:700;}
+
+  .toast{
+    position:fixed; left:50%; bottom:100px; transform:translateX(-50%);
+    background:var(--surface-raised); border:1px solid var(--rule); color:var(--ink);
+    padding:9px 16px; border-radius:14px; font-size:12.5px; z-index:40;
+    opacity:0; transition:opacity .2s ease; pointer-events:none;
+    max-width:85vw; text-align:center; line-height:1.5;
+  }
+  .toast.show{opacity:1;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark">✎</span>
+    <div>
+      <h1>アイデアメモ</h1>
+      <p class="sub">衣装 × 構図 クロッキー帳</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button id="backupToggle" aria-label="バックアップ">⇅</button>
+    <button id="searchToggle" aria-label="検索を開く">検索</button>
+  </div>
+</header>
+
+<div class="search-bar hidden" id="searchBar">
+  <input type="text" id="searchInput" placeholder="衣装・構図・タグで検索">
+</div>
+
+<div class="filter-row" id="filterRow"></div>
+
+<main id="list"></main>
+<div class="empty-state hidden" id="emptyState">
+  <span class="big">まだ何も記録されていません</span>
+  右下の + から、思いついた衣装や構図を書き留めましょう。
+</div>
+
+<button class="fab" id="fabAdd" aria-label="新しいアイデアを追加">+</button>
+<div class="backdrop hidden" id="backdrop"></div>
+
+<div class="sheet hidden" id="sheet" role="dialog" aria-labelledby="sheetTitle">
+  <div class="sheet-handle"></div>
+  <h2 id="sheetTitle">新しいアイデア</h2>
+  <form id="ideaForm">
+    <label>衣装<span class="req">必須</span>
+      <input required id="fCostume" placeholder="例: 白のサマードレス、麦わら帽子">
+    </label>
+    <label>構図・アングル
+      <input id="fComposition" placeholder="例: 見上げるロー・アングル、逆光">
+    </label>
+    <label>ControlNetタイプ
+      <input list="cnTypes" id="fControlnet" placeholder="例: OpenPose">
+      <datalist id="cnTypes">
+        <option value="OpenPose"></option>
+        <option value="Canny"></option>
+        <option value="Depth"></option>
+        <option value="Lineart"></option>
+        <option value="Tile"></option>
+      </datalist>
+    </label>
+    <label>参考画像
+      <div class="image-field">
+        <button type="button" class="image-upload-btn" id="imageUploadBtn">画像を選ぶ / 撮影する</button>
+        <input type="file" id="fImage" accept="image/*" style="display:none">
+        <div class="image-preview-wrap hidden" id="imagePreviewWrap">
+          <img id="imagePreview" alt="添付画像プレビュー">
+          <button type="button" class="image-remove" id="imageRemoveBtn" aria-label="画像を削除">×</button>
+        </div>
+      </div>
+    </label>
+    <label>タグ（カンマ区切り）
+      <input id="fTags" placeholder="夏, 屋外, 逆光">
+    </label>
+    <label>優先度
+      <div class="stars" id="starPicker" data-value="0">☆☆☆</div>
+    </label>
+    <label>メモ
+      <textarea id="fMemo" rows="2" placeholder="細かいメモや思いつき"></textarea>
+    </label>
+    <div class="sheet-actions">
+      <button type="button" id="cancelBtn">キャンセル</button>
+      <button type="submit" id="saveBtn">保存する</button>
+    </div>
+  </form>
+</div>
+
+<div class="backdrop hidden" id="backupBackdrop"></div>
+<div class="sheet hidden" id="backupSheet" role="dialog" aria-labelledby="backupSheetTitle">
+  <div class="sheet-handle"></div>
+  <h2 id="backupSheetTitle">バックアップ</h2>
+  <p style="font-size:12.5px; color:var(--ink-dim); line-height:1.6; margin:0 0 14px;">
+    保存機能に問題がある間は、ここで手動でデータを書き出し・読み込みできます。
+  </p>
+  <div class="sheet-actions" style="margin-bottom:14px;">
+    <button type="button" id="exportCopyBtn">コピーして書き出す</button>
+    <button type="button" id="exportFileBtn">ファイルで保存</button>
+  </div>
+  <label style="display:block; font-size:12px; color:var(--ink-dim); margin-bottom:8px;">
+    復元するデータを貼り付け
+    <textarea id="importText" rows="4" placeholder="ここに書き出したJSONを貼り付け"></textarea>
+  </label>
+  <div class="sheet-actions">
+    <button type="button" id="backupCloseBtn">閉じる</button>
+    <button type="button" id="importBtn">この内容で復元する</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox hidden" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose" aria-label="閉じる">×</button>
+  <img id="lightboxImg" alt="参考画像">
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'sd-ideas-v1';
+  let ideas = [];
+  let editingId = null;
+  let activeFilterTag = null;
+  let searchText = '';
+  let pendingImage = null;
+
+  const listEl = document.getElementById('list');
+  const emptyEl = document.getElementById('emptyState');
+  const filterRow = document.getElementById('filterRow');
+  const sheet = document.getElementById('sheet');
+  const backdrop = document.getElementById('backdrop');
+  const form = document.getElementById('ideaForm');
+  const starPicker = document.getElementById('starPicker');
+  const toastEl = document.getElementById('toast');
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 3200);
+  }
+
+  async function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      ideas = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      console.error('load failed', e);
+      ideas = [];
+    }
+    render();
+  }
+
+  async function persist(){
+    const payload = JSON.stringify(ideas);
+    const approxKB = Math.round(payload.length / 1024);
+    try{
+      localStorage.setItem(STORAGE_KEY, payload);
+      return true;
+    }catch(e){
+      console.error('localStorage.setItem failed. Payload size (KB):', approxKB, e);
+      showToast(`保存機能でエラーが発生しました（${approxKB}KB）。ブラウザのストレージ容量が不足している可能性があります`);
+      return false;
+    }
+  }
+
+  function allTags(){
+    const set = new Set();
+    ideas.forEach(i => (i.tags||[]).forEach(t => set.add(t)));
+    return Array.from(set);
+  }
+
+  function renderFilters(){
+    const tags = allTags();
+    filterRow.innerHTML = '';
+    if(tags.length === 0){ filterRow.style.display='none'; return; }
+    filterRow.style.display='flex';
+    tags.forEach(tag => {
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (activeFilterTag === tag ? ' active' : '');
+      chip.textContent = '#' + tag;
+      chip.onclick = () => {
+        activeFilterTag = activeFilterTag === tag ? null : tag;
+        render();
+      };
+      filterRow.appendChild(chip);
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function render(){
+    renderFilters();
+    let visible = ideas.slice().sort((a,b) => b.createdAt - a.createdAt);
+    if(activeFilterTag){
+      visible = visible.filter(i => (i.tags||[]).includes(activeFilterTag));
+    }
+    if(searchText){
+      const q = searchText.toLowerCase();
+      visible = visible.filter(i =>
+        (i.costume||'').toLowerCase().includes(q) ||
+        (i.composition||'').toLowerCase().includes(q) ||
+        (i.tags||[]).some(t => t.toLowerCase().includes(q))
+      );
+    }
+
+    listEl.innerHTML = '';
+    emptyEl.classList.toggle('hidden', ideas.length > 0);
+
+    if(ideas.length > 0 && visible.length === 0){
+      const p = document.createElement('p');
+      p.style.cssText = 'text-align:center;color:var(--ink-faint);font-size:13px;padding:30px 0;';
+      p.textContent = '条件に一致するアイデアがありません。';
+      listEl.appendChild(p);
+      return;
+    }
+
+    visible.forEach(idea => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      const frameNo = 'No.' + String(idea.seq).padStart(3, '0');
+      const stars = '★'.repeat(idea.priority||0) + '☆'.repeat(3-(idea.priority||0));
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="frame-no">${frameNo}</span>
+          <span class="priority">${stars}</span>
+        </div>
+        <h3>${escapeHtml(idea.costume)}</h3>
+        ${idea.composition ? `<p class="composition">${escapeHtml(idea.composition)}</p>` : ''}
+        ${idea.controlnet ? `<div class="badges"><span class="badge">ControlNet: ${escapeHtml(idea.controlnet)}</span></div>` : ''}
+        ${(idea.tags && idea.tags.length) ? `<div class="tags">${idea.tags.map(t=>'#'+escapeHtml(t)).join(' ')}</div>` : ''}
+        ${idea.image ? `<img class="card-thumb" src="${idea.image}" alt="参考画像" data-full="${idea.image}">` : ''}
+        ${idea.memo ? `<p class="memo">${escapeHtml(idea.memo)}</p>` : ''}
+        <div class="card-actions">
+          <button class="copy">コピー</button>
+          <button class="edit">編集</button>
+          <button class="delete">削除</button>
+        </div>
+      `;
+      card.querySelector('.copy').onclick = () => copyIdea(idea);
+      card.querySelector('.edit').onclick = () => openSheet(idea);
+      card.querySelector('.delete').onclick = () => deleteIdea(idea.id);
+      const thumb = card.querySelector('.card-thumb');
+      if(thumb){ thumb.onclick = () => openLightbox(idea.image); }
+      listEl.appendChild(card);
+    });
+  }
+
+  function copyIdea(idea){
+    const lines = [];
+    lines.push('衣装: ' + idea.costume);
+    if(idea.composition) lines.push('構図: ' + idea.composition);
+    if(idea.controlnet) lines.push('ControlNet: ' + idea.controlnet);
+    if(idea.tags && idea.tags.length) lines.push('タグ: ' + idea.tags.join(', '));
+    if(idea.memo) lines.push('メモ: ' + idea.memo);
+    if(idea.image) lines.push('（参考画像あり — アプリ内で確認）');
+    const text = lines.join('\n');
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(()=> showToast('コピーしました')).catch(()=> showToast('コピーできませんでした'));
+    }else{
+      showToast('コピーできませんでした');
+    }
+  }
+
+  function deleteIdea(id){
+    ideas = ideas.filter(i => i.id !== id);
+    persist();
+    render();
+  }
+
+  function openSheet(idea){
+    editingId = idea ? idea.id : null;
+    document.getElementById('sheetTitle').textContent = idea ? 'アイデアを編集' : '新しいアイデア';
+    document.getElementById('fCostume').value = idea ? idea.costume : '';
+    document.getElementById('fComposition').value = idea ? (idea.composition||'') : '';
+    document.getElementById('fControlnet').value = idea ? (idea.controlnet||'') : '';
+    document.getElementById('fTags').value = idea ? (idea.tags||[]).join(', ') : '';
+    document.getElementById('fMemo').value = idea ? (idea.memo||'') : '';
+    setStars(idea ? (idea.priority||0) : 0);
+    pendingImage = idea && idea.image ? idea.image : null;
+    updateImagePreview();
+    sheet.classList.remove('hidden');
+    backdrop.classList.remove('hidden');
+    setTimeout(()=> document.getElementById('fCostume').focus(), 150);
+  }
+
+  function closeSheet(){
+    sheet.classList.add('hidden');
+    backdrop.classList.add('hidden');
+    form.reset();
+    editingId = null;
+    pendingImage = null;
+    updateImagePreview();
+  }
+
+  function updateImagePreview(){
+    const wrap = document.getElementById('imagePreviewWrap');
+    const img = document.getElementById('imagePreview');
+    if(pendingImage){
+      img.src = pendingImage;
+      wrap.classList.remove('hidden');
+    } else {
+      img.src = '';
+      wrap.classList.add('hidden');
+    }
+  }
+
+  function resizeImageFile(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('image load failed'));
+        img.onload = () => {
+          const TARGET_BYTES = 350000;
+          let dim = 900;
+          let quality = 0.78;
+          let dataUrl = renderToDataUrl(img, dim, quality);
+
+          let attempts = 0;
+          while(dataUrl.length > TARGET_BYTES && attempts < 6){
+            if(quality > 0.4){
+              quality -= 0.12;
+            } else {
+              dim = Math.round(dim * 0.8);
+            }
+            dataUrl = renderToDataUrl(img, dim, quality);
+            attempts++;
+          }
+          resolve(dataUrl);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderToDataUrl(img, maxDim, quality){
+    let { width, height } = img;
+    if(width > maxDim || height > maxDim){
+      if(width > height){
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else {
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', quality);
+  }
+
+  document.getElementById('imageUploadBtn').onclick = () => document.getElementById('fImage').click();
+  document.getElementById('fImage').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      pendingImage = await resizeImageFile(file);
+      updateImagePreview();
+    }catch(err){
+      showToast('画像の読み込みに失敗しました');
+    }
+    e.target.value = '';
+  });
+  document.getElementById('imageRemoveBtn').onclick = () => {
+    pendingImage = null;
+    updateImagePreview();
+  };
+
+  function openLightbox(src){
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').classList.remove('hidden');
+  }
+  document.getElementById('lightboxClose').onclick = () => {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.getElementById('lightboxImg').src = '';
+  };
+  document.getElementById('lightbox').addEventListener('click', (e) => {
+    if(e.target.id === 'lightbox'){
+      document.getElementById('lightbox').classList.add('hidden');
+      document.getElementById('lightboxImg').src = '';
+    }
+  });
+
+  function setStars(n){
+    starPicker.dataset.value = n;
+    const chars = ['★','★','★'].map((c,i)=> i < n ? '★' : '☆');
+    starPicker.textContent = chars.join('');
+  }
+  starPicker.onclick = (e) => {
+    const rect = starPicker.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const n = Math.min(3, Math.max(1, Math.ceil(ratio * 3)));
+    setStars(n);
+  };
+
+  document.getElementById('fabAdd').onclick = () => openSheet(null);
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  backdrop.onclick = closeSheet;
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const costume = document.getElementById('fCostume').value.trim();
+    if(!costume) return;
+    const tags = document.getElementById('fTags').value
+      .split(',').map(t => t.trim()).filter(Boolean);
+
+    if(editingId){
+      const idea = ideas.find(i => i.id === editingId);
+      idea.costume = costume;
+      idea.composition = document.getElementById('fComposition').value.trim();
+      idea.controlnet = document.getElementById('fControlnet').value.trim();
+      idea.image = pendingImage;
+      idea.tags = tags;
+      idea.memo = document.getElementById('fMemo').value.trim();
+      idea.priority = parseInt(starPicker.dataset.value || '0', 10);
+    } else {
+      const maxSeq = ideas.reduce((m,i)=> Math.max(m, i.seq||0), 0);
+      ideas.push({
+        id: 'idea_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        seq: maxSeq + 1,
+        costume,
+        composition: document.getElementById('fComposition').value.trim(),
+        controlnet: document.getElementById('fControlnet').value.trim(),
+        image: pendingImage,
+        tags,
+        memo: document.getElementById('fMemo').value.trim(),
+        priority: parseInt(starPicker.dataset.value || '0', 10),
+        createdAt: Date.now()
+      });
+    }
+    const wasNew = !editingId;
+    closeSheet();
+    render();
+    const ok = await persist();
+    if(ok){
+      showToast(wasNew ? '保存しました' : '更新しました');
+    }
+  };
+
+  document.getElementById('searchToggle').onclick = () => {
+    document.getElementById('searchBar').classList.toggle('hidden');
+    if(!document.getElementById('searchBar').classList.contains('hidden')){
+      setTimeout(()=> document.getElementById('searchInput').focus(), 100);
+    }
+  };
+
+  const backupSheet = document.getElementById('backupSheet');
+  const backupBackdrop = document.getElementById('backupBackdrop');
+
+  function openBackupSheet(){
+    backupSheet.classList.remove('hidden');
+    backupBackdrop.classList.remove('hidden');
+  }
+  function closeBackupSheet(){
+    backupSheet.classList.add('hidden');
+    backupBackdrop.classList.add('hidden');
+  }
+  document.getElementById('backupToggle').onclick = openBackupSheet;
+  document.getElementById('backupCloseBtn').onclick = closeBackupSheet;
+  backupBackdrop.onclick = closeBackupSheet;
+
+  document.getElementById('exportCopyBtn').onclick = async () => {
+    const data = JSON.stringify(ideas);
+    try{
+      await navigator.clipboard.writeText(data);
+      showToast('コピーしました。メモアプリ等に貼り付けて保管してください');
+    }catch(e){
+      showToast('コピーできませんでした。下のテキストを長押しして手動でコピーしてください');
+      document.getElementById('importText').value = data;
+    }
+  };
+
+  document.getElementById('exportFileBtn').onclick = () => {
+    try{
+      const data = JSON.stringify(ideas, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = `idea-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('ファイルを書き出しました');
+    }catch(e){
+      showToast('ファイル書き出しに失敗しました');
+    }
+  };
+
+  document.getElementById('importBtn').onclick = () => {
+    const raw = document.getElementById('importText').value.trim();
+    if(!raw){ showToast('貼り付けるデータがありません'); return; }
+    try{
+      const parsed = JSON.parse(raw);
+      if(!Array.isArray(parsed)) throw new Error('not an array');
+      ideas = parsed;
+      render();
+      closeBackupSheet();
+      showToast('復元しました（保存機能が復旧したら自動的に反映されます）');
+      persist();
+    }catch(e){
+      showToast('データの形式が正しくありません');
+    }
+  };
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchText = e.target.value.trim();
+    render();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
